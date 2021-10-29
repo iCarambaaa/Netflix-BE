@@ -1,7 +1,7 @@
 import express from 'express';
 import createHttpError from "http-errors" // easier error creation
 import {getMedia, writeMedia} from '../lib/fs-tools.js'; // fs helper functions
-import { mediaValidationMiddlewares } from '../lib/validators.js'; // declared validations
+import { mediaValidationMiddlewares, myCustomMiddlewareForCheckingUniqueness } from '../lib/validators.js'; // declared validations
 import { validationResult } from "express-validator" // validation helper need inside post/put to work with validation middleware
 
 
@@ -54,17 +54,17 @@ mediaRouter.get("/:id", async(req, res, next) => {
 
 // POST media 
 
-mediaRouter.post("/", mediaValidationMiddlewares, async(req, res, next) => {
+mediaRouter.post("/", myCustomMiddlewareForCheckingUniqueness, mediaValidationMiddlewares, async(req, res, next) => {
     try {
         const errorList = validationResult(req)
          if (errorList.isEmpty()) {
-             
              const media = await getMedia()                 // get array of Media
-             const newMedia = {...req.body}                // create new media
-             media.push(newMedia)                         // add media
-             await writeMedia(media)                     // update JSON
-             res.status(201).send(newMedia)             // send back updated media
-             
+
+                const newMedia = {...req.body}                // create new media
+                media.push(newMedia)                         // add media
+                await writeMedia(media)                     // update JSON
+                res.status(201).send(newMedia)             // send back updated media
+
          }else{
              
             next(createHttpError(400, { errorList }));
