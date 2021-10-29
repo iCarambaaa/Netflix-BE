@@ -31,6 +31,6 @@ export const mediaValidationMiddlewares = [
 
 export const reviewsValidationMiddlewares = [
   body("comment").exists().withMessage("Comment is a mandatory field!"),
-  body("rate").exists().withMessage("Rate is a mandatory field!").matches(/^[1-5]$/).withMessage("Rate must be 1 - 5"), // TODO max rate 5
+  body("rate").exists().withMessage("Rate is a mandatory field!").matches(/^[1-5]$/).withMessage("Rate must be 1 - 5"),
   body("elementId").exists().withMessage("Element ID is a mandatory field!") // = IMDBID
 ]
