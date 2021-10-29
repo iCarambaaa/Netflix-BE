@@ -1,37 +1,70 @@
-import express from 'express';
-import listEndpoints from "express-list-endpoints";
-//import authorRouter from "./services/authors/index.js";
-//import postsRouter from "./services/posts/index.js";
+import express from "express";
 import cors from "cors";
-//import { genericErrorHandler, badRequestHandler, unauthorizedHandler, notFoundHandler } from "./errorHandlers.js";
+import listEndpoints from "express-list-endpoints"; // table of endpoints
+import mediaRouter  from "./routers/media.js"; // import author router
+import reviewsRouter  from "./routers/reviews.js"; // import posts router
+import filesRouter from "./routers/files.js"; // import files router
+import { genericErrorHandler, badRequestHandler, unauthorizedHandler, notFoundHandler } from "./lib/errorHandlers.js";
+import {publicDirectory} from "./lib/fs-tools.js";
 
-const server = express()
+const server = express(); // express server declaration
 
-// *********************** GLOBAL MIDDLEWARES ***************************
 
-server.use(cors()) // this! for FE & BE communication
-server.use(express.json())   // this! specify before ENDPOINTS, else all will be UNDEFINED
+// CORS setup
 
+const whitelist = [process.env.FE_LOCAL_URL, process.env.FE_PROD_URL]
+
+const corsOpts = {
+  
+  origin: function (origin, next) {
+    // Since CORS is a global middleware, it is going to be executed for each and every request --> 
+    // we are able to "detect" the origin of each and every req from this function
+    console.log("CURRENT ORIGIN: ", origin)
+
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      // If origin is in the whitelist or if the origin is undefined () --> move ahead
+      next(null, true)
+
+    } else {
+      // If origin is NOT in the whitelist --> trigger a CORS error
+      next(new Error("CORS ERROR"))
+    }
+  }
+}
+
+
+// *********************** GLOBAL MIDDLEWARES ********************
+
+server.use(cors(corsOpts)); // cors for connecting BE&FE
+
+server.use(express.json()); // this! specify before ENDPOINTS, else all will be UNDEFINED
+
+server.use(express.static(publicDirectory)); // declaring as public folder (serving static content from here on now)
 
 // ************************ ENDPOINTS **********************
 
-// server.use("/authors", authorRouter)
-// server.use("/blogPosts", postsRouter)
-
+server.use("/media", mediaRouter)
+server.use("/media", reviewsRouter)
+server.use("/media", filesRouter)
 
 // *********************** ERROR MIDDLEWARES ***************************
 
-// server.use(badRequestHandler)
-// server.use(unauthorizedHandler)
-// server.use(notFoundHandler)
-// server.use(genericErrorHandler)
+
+server.use(badRequestHandler)
+server.use(unauthorizedHandler)
+server.use(notFoundHandler)
+server.use(genericErrorHandler)
 
 
 
-const port = process.env.PORT 
+// RUNNING THE MAIN THREAD LOOP
 
 console.table(listEndpoints(server)) // usage of express-list-endpoints
 
-server.listen(port, () => {
-    console.log('listening on port:', port)
-})
+const PORT = process.env.PORT // Port declaration out of .env
+
+server.listen(PORT, () => console.log("Server listening on port :", PORT, "✅")); // Main thread initialization
+
+server.on("error", (error) =>                                                      // error handling
+  console.log(`❌ Server is not running due to : ${error}`)        
+);
